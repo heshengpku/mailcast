@@ -24,7 +24,7 @@ var runing bool
 
 func main() {
 	LoadData()
-	var emails, body, msgbox *walk.TextEdit
+	var body, msgbox *walk.TextEdit
 	var user, password, host, subject *walk.LineEdit
 	var readBtn, startBtn *walk.PushButton
 	mw := &MyMainWindow{}
@@ -36,7 +36,7 @@ func main() {
 		Children: []Widget{
 			VSplitter{
 				Children: []Widget{
-					TextEdit{AssignTo: &emails, Text: ct.Send, ToolTipText: "待发送邮件列表，每列一个"},
+					TextEdit{AssignTo: &mw.edit, Text: ct.Send, ToolTipText: "待发送邮件列表，每列一个"},
 					PushButton{
 						AssignTo:  &readBtn,
 						Text:      "打开",
@@ -56,6 +56,7 @@ func main() {
 						AssignTo: &startBtn,
 						Text:     "开始群发",
 						OnClicked: func() {
+							emails := mw.edit
 							ct.Name = user.Text()
 							ct.Pwd = password.Text()
 							ct.Host = host.Text()
@@ -118,6 +119,7 @@ type MyMainWindow struct {
 }
 
 func (mw *MyMainWindow) pbClicked() {
+	fmt.Println("onClink read file")
 	dlg := new(walk.FileDialog)
 	dlg.FilePath = mw.path
 	dlg.Title = "Select File"
@@ -131,5 +133,9 @@ func (mw *MyMainWindow) pbClicked() {
 		return
 	}
 	mw.path = dlg.FilePath
-	mw.edit.AppendText(fmt.Sprintf("Select : %s\r\n", mw.path))
+	emails, err := readLine2Array(mw.path)
+	if err != nil {
+		mw.edit.AppendText(fmt.Sprintf("Select : %s\r\nerror: %s", mw.path, err.Error()))
+	}
+	mw.edit.AppendText(strings.Join(emails, "\r\n"))
 }
