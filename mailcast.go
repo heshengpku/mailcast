@@ -22,7 +22,7 @@ var ct Content
 var runing bool
 
 func main() {
-	LoadData()
+	loadData("data.dat")
 
 	err := ui.Main(func() {
 		emails := ui.NewMultilineEntry()
@@ -80,7 +80,7 @@ func main() {
 		hbox.Append(vb2, true)
 		hbox.Append(vb3, true)
 
-		window := ui.NewWindow("邮件群发器", 1000, 800, false)
+		window := ui.NewWindow("邮件群发器", 800, 600, false)
 		window.SetMargined(true)
 		window.SetChild(hbox)
 
@@ -88,7 +88,7 @@ func main() {
 			path := ui.OpenFile(window)
 			emailsText, err := readLine2Array(path)
 			if err != nil {
-				msgbox.Append(fmt.Sprintf("Select : %s\r\nerror: %s", path, err.Error()))
+				msgbox.Append(fmt.Sprintf("Select : %s\nerror: %s", path, err.Error()))
 			}
 			emails.SetText(strings.Join(emailsText, "\r\n"))
 		})
@@ -97,7 +97,7 @@ func main() {
 			path := ui.OpenFile(window)
 			bodyText, err := readLine2Array(path)
 			if err != nil {
-				msgbox.Append(fmt.Sprintf("Select : %s\r\nerror: %s", path, err.Error()))
+				msgbox.Append(fmt.Sprintf("Select : %s\nerror: %s", path, err.Error()))
 			}
 			body.SetText(strings.Join(bodyText, "\r\n"))
 		})
@@ -109,7 +109,7 @@ func main() {
 			ct.Subject = subject.Text()
 			ct.Body = body.Text()
 			ct.Send = emails.Text()
-			SaveData()
+			saveData("data.dat")
 
 			if runing == false {
 				runing = true
@@ -123,7 +123,7 @@ func main() {
 		})
 
 		window.OnClosing(func(*ui.Window) bool {
-			SaveData()
+			saveData("data.dat")
 			ui.Quit()
 			return true
 		})
@@ -135,32 +135,29 @@ func main() {
 }
 
 func sendThread(msgbox, es *ui.MultilineEntry, progress *ui.ProgressBar) {
-	sentTo := strings.Split(ct.Send, "\r\n")
+	sentTo := strings.Split(ct.Send, "\n")
 	count := len(sentTo)
 	success := 0
 	for index, to := range sentTo {
 		if runing == false {
 			break
 		}
-		msgbox.Append("发送到" + to + "..." + strconv.Itoa((index/count)*100) + "%")
-		progress.SetValue((index / count) * 100)
+		msgbox.Append("\n发送到" + to + "..." + strconv.Itoa((index+1)*100/count) + "%")
+		progress.SetValue((index + 1) * 100 / count)
 		err := SendMail(ct.Name, ct.Pwd, ct.Host, to, ct.Subject, ct.Body, "html")
 		if err != nil {
-			msgbox.Append("\r\n失败：" + err.Error() + "\r\n")
-			if err.Error() == "550 Mailbox not found or access denied" {
-				ct.Send = strings.Join(DelArrayVar(strings.Split(ct.Send, "\r\n"), to), "\r\n")
-				es.SetText(ct.Send)
-			}
+			msgbox.Append("\n失败：" + err.Error() + "\n")
+			ct.Send = strings.Join(delArrayVar(strings.Split(ct.Send, "\n"), to), "\r\n")
+			es.SetText(ct.Send)
 			time.Sleep(1 * time.Second)
 			continue
 		} else {
 			success++
-			msgbox.Append("\r\n发送成功！")
-			ct.Send = strings.Join(DelArrayVar(strings.Split(ct.Send, "\r\n"), to), "\r\n")
+			msgbox.Append("\n发送成功！")
+			ct.Send = strings.Join(delArrayVar(strings.Split(ct.Send, "\n"), to), "\r\n")
 			es.SetText(ct.Send)
 		}
 		time.Sleep(1 * time.Second)
 	}
-	SaveData()
-	msgbox.Append("停止发送！成功" + strconv.Itoa(success) + "条\r\n")
+	msgbox.Append("停止发送！成功" + strconv.Itoa(success) + "条\n")
 }

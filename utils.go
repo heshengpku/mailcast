@@ -35,7 +35,7 @@ func readLine2Array(filename string) ([]string, error) {
 	return result, nil
 }
 
-func DelArrayVar(arr []string, str string) []string {
+func delArrayVar(arr []string, str string) []string {
 	str = strings.TrimSpace(str)
 	for i, v := range arr {
 		v = strings.TrimSpace(v)
@@ -52,44 +52,29 @@ func DelArrayVar(arr []string, str string) []string {
 	return arr
 }
 
-func LoadData() {
+func loadData(path string) {
 	fmt.Println("LoadData")
-	file, err := os.Open("data.dat")
-	defer file.Close()
+	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println(err.Error())
-		ct = Content{
-			Name:    "用户名",
-			Pwd:     "用户密码",
-			Host:    "SMTP服务器:端口",
-			Subject: "邮件主题",
-			Body:    "邮件内容",
-			Send:    "要发送的邮箱，每行一个",
-		}
 		return
 	}
+	defer file.Close()
 	dec := gob.NewDecoder(file)
 	err = dec.Decode(&ct)
 	if err != nil {
 		fmt.Println(err.Error())
-		ct = Content{
-			Name:    "用户名",
-			Pwd:     "用户密码",
-			Host:    "SMTP服务器:端口",
-			Subject: "邮件主题",
-			Body:    "邮件内容",
-			Send:    "要发送的邮箱，每行一个",
-		}
 	}
 }
 
-func SaveData() {
+func saveData(path string) {
 	fmt.Println("SaveData")
-	file, err := os.Create("data.dat")
-	defer file.Close()
+	file, err := os.Create(path)
 	if err != nil {
 		fmt.Println(err.Error())
+		return
 	}
+	defer file.Close()
 	enc := gob.NewEncoder(file)
 	err = enc.Encode(ct)
 	if err != nil {

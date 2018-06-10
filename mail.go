@@ -18,7 +18,7 @@ func SendMail(user, password, host, to, subject, body, mailtype string) error {
 		contentType = "Content-Type: text/plain;charset=UTF-8"
 	}
 	body = strings.TrimSpace(body)
-	msg := []byte("To: " + to + "\r\nFrom: " + user + "<" + user + ">\r\nSubject: " + subject + "\r\n" + contentType + "\r\n\r\n" + body)
+	msg := []byte("To: " + to + "\nFrom: " + user + "<" + user + ">\nSubject: " + subject + "\n" + contentType + "\n\n" + body)
 	sentTo := strings.Split(to, ";")
 	err := smtp.SendMail(host, auth, user, sentTo, msg)
 	if err != nil {
