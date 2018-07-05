@@ -109,7 +109,7 @@ func main() {
 			if err != nil {
 				msgbox.Append(fmt.Sprintf("打开文件 %s\n错误: %s\n\n", path, err.Error()))
 			}
-			emails.SetText(strings.Join(emailsText, "\n"))
+			emails.SetText(strings.Join(emailsText, "\r\n"))
 		})
 
 		openbody.OnClicked(func(*ui.Button) {
@@ -118,7 +118,7 @@ func main() {
 			if err != nil {
 				msgbox.Append(fmt.Sprintf("打开文件 %s\n错误: %s\n\n", path, err.Error()))
 			}
-			body.SetText(strings.Join(bodyText, "\n"))
+			body.SetText(strings.Join(bodyText, "\r\n"))
 		})
 
 		send.OnClicked(func(b *ui.Button) {
