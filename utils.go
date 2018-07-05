@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"encoding/gob"
 	"errors"
-	"fmt"
 	"io"
+	"log"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -52,32 +53,45 @@ func delArrayVar(arr []string, str string) []string {
 	return arr
 }
 
-func loadData(path string) {
-	fmt.Println("LoadData")
+func loadData(ct *Content, path string) {
+	log.Println("Load Data...")
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	defer file.Close()
 	dec := gob.NewDecoder(file)
-	err = dec.Decode(&ct)
+	err = dec.Decode(ct)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 	}
 }
 
-func saveData(path string) {
-	fmt.Println("SaveData")
+func saveData(ct Content, path string) {
+	log.Println("Save Data...")
 	file, err := os.Create(path)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	defer file.Close()
 	enc := gob.NewEncoder(file)
 	err = enc.Encode(ct)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 	}
+}
+
+func emailsValid(emails []string) []string {
+	res := make([]string, 0)
+	for _, email := range emails {
+		if valid, err := regexp.Match("^[\\w.-]+@[\\w-]+(.[\\w-]+)*.[\\w]{2,6}$",
+			[]byte(email)); valid && err == nil {
+			res = append(res, email)
+		} else {
+			log.Println("Drop:", email)
+		}
+	}
+	return res
 }
