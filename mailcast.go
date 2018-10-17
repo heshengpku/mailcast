@@ -9,29 +9,11 @@ import (
 	"github.com/ProtonMail/ui"
 )
 
-// func init() {
-// 	logFile, err := os.Create("log.log")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	defer logFile.Close()
-// 	log.SetOutput(logFile)
-// }
-
-type Content struct {
-	Name    string
-	Pwd     string
-	Host    string
-	Subject string
-	Body    string
-	Send    string
-}
-
-var ct Content
 var runing bool
+var data string = "data.dat"
 
 func main() {
-	loadData(&ct, "data.dat")
+	load(data)
 
 	err := ui.Main(func() {
 		emails := ui.NewMultilineEntry()
@@ -105,20 +87,22 @@ func main() {
 
 		openfile.OnClicked(func(*ui.Button) {
 			path := ui.OpenFile(window)
-			emailsText, err := readLine2Array(path)
+			err := loadMails(path)
 			if err != nil {
 				msgbox.Append(fmt.Sprintf("打开文件 %s\n错误: %s\n\n", path, err.Error()))
+			} else {
+				msgbox.Append(fmt.Sprintf("打开文件 %s\n成功\n\n", path))
 			}
-			emails.SetText(strings.Join(emailsText, "\r\n"))
+			emails.SetText(strings.Join(getMails(), "\r\n"))
 		})
 
 		openbody.OnClicked(func(*ui.Button) {
 			path := ui.OpenFile(window)
-			bodyText, err := readLine2Array(path)
+			bodyText, err := readTxtFromFile(path)
 			if err != nil {
 				msgbox.Append(fmt.Sprintf("打开文件 %s\n错误: %s\n\n", path, err.Error()))
 			}
-			body.SetText(strings.Join(bodyText, "\r\n"))
+			body.SetText(bodyText)
 		})
 
 		send.OnClicked(func(b *ui.Button) {
@@ -127,8 +111,7 @@ func main() {
 			ct.Host = host.Text() + ":" + port.Text()
 			ct.Subject = subject.Text()
 			ct.Body = body.Text()
-			ct.Send = emails.Text()
-			saveData(ct, "data.dat")
+			save(data)
 
 			if runing == false {
 				runing = true
@@ -142,7 +125,7 @@ func main() {
 		})
 
 		window.OnClosing(func(*ui.Window) bool {
-			saveData(ct, "data.dat")
+			save(data)
 			ui.Quit()
 			return true
 		})
@@ -154,13 +137,12 @@ func main() {
 }
 
 func sendThread(msgbox, es *ui.MultilineEntry, progress *ui.ProgressBar) {
-	sentTo := emailsValid(strings.Split(ct.Send, "\n"))
-	ct.Send = strings.Join(sentTo, "\n")
-	es.SetText(ct.Send)
-	count := len(sentTo)
+	mails := getMails()
+	count := len(mails)
 	success := 0
 	msgbox.Append(">>>开始发送，共" + strconv.Itoa(count) + "条\n\n")
-	for index, to := range sentTo {
+	startT := time.Now()
+	for index, to := range mails {
 		if runing == false {
 			break
 		}
@@ -169,17 +151,18 @@ func sendThread(msgbox, es *ui.MultilineEntry, progress *ui.ProgressBar) {
 		err := SendMail(ct.Name, ct.Pwd, ct.Host, to, ct.Subject, ct.Body, "html")
 		if err != nil {
 			msgbox.Append("发送失败：" + err.Error() + "\n\n")
-			ct.Send = strings.Join(delArrayVar(strings.Split(ct.Send, "\n"), to), "\n")
-			es.SetText(ct.Send)
+			delMail(to)
+			es.SetText(strings.Join((getMails()), "\r\n"))
 			time.Sleep(1 * time.Second)
 			continue
 		} else {
 			success++
 			msgbox.Append("发送成功！\n\n")
-			ct.Send = strings.Join(delArrayVar(strings.Split(ct.Send, "\n"), to), "\n")
-			es.SetText(ct.Send)
+			delMail(to)
+			es.SetText(strings.Join((getMails()), "\r\n"))
 		}
-		time.Sleep(100 * time.Millisecond)
+		// time.Sleep(100 * time.Millisecond)
 	}
-	msgbox.Append("<<<停止发送！成功" + strconv.Itoa(success) + "条\n\n")
+	duration := time.Since(startT)
+	msgbox.Append(fmt.Sprintf("<<<停止发送！成功%d条，用时%v\n\n", success, duration))
 }

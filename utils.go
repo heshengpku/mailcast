@@ -5,13 +5,31 @@ import (
 	"encoding/gob"
 	"errors"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
 	"strings"
 )
 
-func readLine2Array(filename string) ([]string, error) {
+// type Mail struct {
+// 	Email string `json:"email"`
+// 	Name  string `json:"name"`
+// }
+
+// func (mail Mail) String() string {
+// 	return fmt.Sprintf("%s \t %s", mail.Email, mail.Name)
+// }
+
+// func mailArrayToStrings(list []Mail) []string {
+// 	var strArray []string
+// 	for _, email := range mailList {
+// 		strArray = append(strArray, email.String())
+// 	}
+// 	return strArray
+// }
+
+func readMailsFromFile(filename string) ([]string, error) {
 	result := make([]string, 0)
 	file, err := os.Open(filename)
 	if err != nil {
@@ -36,10 +54,41 @@ func readLine2Array(filename string) ([]string, error) {
 	return result, nil
 }
 
-func delArrayVar(arr []string, str string) []string {
+// func readMailsFromFile(filename string) ([]Mail, error) {
+// 	result := make([]Mail, 0)
+// 	file, err := ioutil.ReadFile(filename)
+// 	if err != nil {
+// 		return result, errors.New("Open file failed")
+// 	}
+// 	r := csv.NewReader(strings.NewReader(string(file[:])))
+// 	records, err := r.Read()
+// 	if err != nil {
+// 		if err != io.EOF {
+// 			return result, errors.New("ReadLine not finish")
+// 		}
+// 	}
+// 	for _, line := range records {
+// 		record := strings.Split(line, ",")
+// 		if emailValid(record[0]) {
+// 			mail := Mail{Email: record[0], Name: record[1]}
+// 			result = append(result, mail)
+// 		}
+// 	}
+// 	return result, nil
+// }
+
+func readTxtFromFile(filename string) (string, error) {
+	context, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+
+	return string(context), nil
+}
+
+func delMailFromList(arr []string, str string) []string {
 	str = strings.TrimSpace(str)
 	for i, v := range arr {
-		v = strings.TrimSpace(v)
 		if v == str {
 			if i == len(arr) {
 				return arr[0 : i-1]
@@ -51,6 +100,15 @@ func delArrayVar(arr []string, str string) []string {
 		}
 	}
 	return arr
+}
+
+func emailValid(email string) bool {
+	if valid, err := regexp.Match("^[\\w.-]+@[\\w-]+(.[\\w-]+)*.[\\w]{2,6}$",
+		[]byte(email)); valid && err == nil {
+		return true
+	}
+
+	return false
 }
 
 func loadData(ct *Content, path string) {
@@ -81,17 +139,4 @@ func saveData(ct Content, path string) {
 	if err != nil {
 		log.Println(err.Error())
 	}
-}
-
-func emailsValid(emails []string) []string {
-	res := make([]string, 0)
-	for _, email := range emails {
-		if valid, err := regexp.Match("^[\\w.-]+@[\\w-]+(.[\\w-]+)*.[\\w]{2,6}$",
-			[]byte(email)); valid && err == nil {
-			res = append(res, email)
-		} else {
-			log.Println("Drop:", email)
-		}
-	}
-	return res
 }

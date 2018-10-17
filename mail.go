@@ -24,6 +24,5 @@ func SendMail(user, password, host, to, subject, body, mailtype string) error {
 	if err != nil {
 		log.Println(err.Error())
 	}
-	// _, err := fmt.Println(host, auth, user, sentTo, msg)
 	return err
 }
