@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 // Content holds the content struct
 type Content struct {
 	Name    string
@@ -12,12 +14,24 @@ type Content struct {
 // ct is the email configure
 var ct Content
 
-func load(path string) {
-	loadData(&ct, path)
+func load(path string) error {
+	return loadData(&ct, path)
 }
 
-func save(path string) {
-	saveData(ct, path)
+func save(path string) error {
+	return saveData(ct, path)
+}
+
+func setContent(name, pwd, host, subject, body string) error {
+	if emailValid(name) == false {
+		return errors.New("Invalid email format")
+	}
+	ct.Name = name
+	ct.Pwd = pwd
+	ct.Host = host
+	ct.Subject = subject
+	ct.Body = body
+	return nil
 }
 
 // mailList is the mail list

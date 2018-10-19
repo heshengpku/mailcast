@@ -111,32 +111,36 @@ func emailValid(email string) bool {
 	return false
 }
 
-func loadData(ct *Content, path string) {
+func loadData(ct *Content, path string) error {
 	log.Println("Load Data...")
 	file, err := os.Open(path)
 	if err != nil {
 		log.Println(err.Error())
-		return
+		return errors.New("Failed to open " + path + ":" + err.Error())
 	}
 	defer file.Close()
 	dec := gob.NewDecoder(file)
 	err = dec.Decode(ct)
 	if err != nil {
 		log.Println(err.Error())
+		return errors.New("Failed to decode from " + path + ":" + err.Error())
 	}
+	return nil
 }
 
-func saveData(ct Content, path string) {
+func saveData(ct Content, path string) error {
 	log.Println("Save Data...")
 	file, err := os.Create(path)
 	if err != nil {
 		log.Println(err.Error())
-		return
+		return errors.New("Failed to open " + path + ":" + err.Error())
 	}
 	defer file.Close()
 	enc := gob.NewEncoder(file)
 	err = enc.Encode(ct)
 	if err != nil {
 		log.Println(err.Error())
+		return errors.New("Failed to encode to " + path + ":" + err.Error())
 	}
+	return nil
 }
