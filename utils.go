@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/gob"
 	"errors"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,103 +12,63 @@ import (
 	"strings"
 )
 
-// type Mail struct {
-// 	Email string `json:"email"`
-// 	Name  string `json:"name"`
-// }
 
-// func (mail Mail) String() string {
-// 	return fmt.Sprintf("%s \t %s", mail.Email, mail.Name)
-// }
-
-// func mailArrayToStrings(list []Mail) []string {
-// 	var strArray []string
-// 	for _, email := range mailList {
-// 		strArray = append(strArray, email.String())
-// 	}
-// 	return strArray
-// }
-
+// readMailsFromFile 从指定文件中读取邮件列表
+// filename: 待读取的文件路径
+// 返回值: 邮件列表切片和可能的错误
 func readMailsFromFile(filename string) ([]string, error) {
 	result := make([]string, 0)
 	file, err := os.Open(filename)
 	if err != nil {
-		return result, errors.New("Open file failed")
+		return nil, fmt.Errorf("打开文件失败: %w", err)
 	}
 	defer file.Close()
-	bf := bufio.NewReader(file)
-	for {
-		line, isPrefix, err := bf.ReadLine()
-		if err != nil {
-			if err != io.EOF {
-				return result, errors.New("ReadLine not finish")
-			}
-			break
-		}
-		if isPrefix {
-			return result, errors.New("Line is too long")
-		}
-		str := string(line)
-		result = append(result, str)
+	
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		result = append(result, scanner.Text())
 	}
+	
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("读取文件失败: %w", err)
+	}
+	
 	return result, nil
 }
 
-// func readMailsFromFile(filename string) ([]Mail, error) {
-// 	result := make([]Mail, 0)
-// 	file, err := ioutil.ReadFile(filename)
-// 	if err != nil {
-// 		return result, errors.New("Open file failed")
-// 	}
-// 	r := csv.NewReader(strings.NewReader(string(file[:])))
-// 	records, err := r.Read()
-// 	if err != nil {
-// 		if err != io.EOF {
-// 			return result, errors.New("ReadLine not finish")
-// 		}
-// 	}
-// 	for _, line := range records {
-// 		record := strings.Split(line, ",")
-// 		if emailValid(record[0]) {
-// 			mail := Mail{Email: record[0], Name: record[1]}
-// 			result = append(result, mail)
-// 		}
-// 	}
-// 	return result, nil
-// }
 
+// readTxtFromFile 读取文本文件的全部内容
+// filename: 待读取的文件路径
+// 返回值: 文件内容字符串和可能的错误
 func readTxtFromFile(filename string) (string, error) {
-	context, err := ioutil.ReadFile(filename)
+	content, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("读取文件失败: %w", err)
 	}
-
-	return string(context), nil
+	return string(content), nil
 }
 
+// delMailFromList 从邮件列表中删除指定邮件地址
+// arr: 原邮件列表
+// str: 要删除的邮件地址
+// 返回值: 删除后的邮件列表
 func delMailFromList(arr []string, str string) []string {
 	str = strings.TrimSpace(str)
 	for i, v := range arr {
 		if v == str {
-			if i == len(arr) {
-				return arr[0 : i-1]
-			}
-			if i == 0 {
-				return arr[1:len(arr)]
-			}
-			return append(arr[0:i], arr[i+1:len(arr)]...)
+			return append(arr[:i], arr[i+1:]...)
 		}
 	}
 	return arr
 }
 
+// emailValid 验证邮件地址格式是否合法
+// email: 待验证的邮件地址
+// 返回值: 是否合法
 func emailValid(email string) bool {
-	if valid, err := regexp.Match("^[\\w.-]+@[\\w-]+(.[\\w-]+)*.[\\w]{2,6}$",
-		[]byte(email)); valid && err == nil {
-		return true
-	}
-
-	return false
+	pattern := `^[\w.-]+@[\w-]+(\.[\w-]+)*\.[a-zA-Z]{2,6}$`
+	valid, err := regexp.MatchString(pattern, email)
+	return err == nil && valid
 }
 
 func loadData(ct *Content, path string) error {
